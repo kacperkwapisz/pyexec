@@ -1,0 +1,19 @@
+services:
+  app:
+    image: ghcr.io/kacperkwapisz/pyexec/pyexec:latest
+    container_name: pyexec-prod
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the host's Docker socket to allow the container to manage other containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Persist session data on the host machine
+      - ./data:/tmp/sessions
+    environment:
+      # REQUIRED: Set a strong, secret API key in your environment.
+      # Example: export API_KEY=$(openssl rand -hex 32)
+      - API_KEY=${API_KEY}
+      - BASE_SESSION_PATH=/tmp/sessions
+      # Use the pre-built public base image for code execution
+      - BASE_IMAGE_NAME=ghcr.io/kacperkwapisz/pyexec/pyexec-base:latest
