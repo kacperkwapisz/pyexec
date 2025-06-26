@@ -1,0 +1,98 @@
+# Docker-in-Docker Configuration for PyExec
+# Use this when your platform doesn't allow Docker socket mounting
+# This runs Docker inside Docker, providing isolation but with some performance overhead
+
+version: "3.8"
+
+services:
+  # Docker-in-Docker daemon
+  dind:
+    image: docker:24-dind
+    container_name: pyexec-docker
+    privileged: true # Required for DinD
+    restart: unless-stopped
+    environment:
+      # Disable TLS for simplicity (consider enabling in production)
+      - DOCKER_TLS_CERTDIR=
+    volumes:
+      # Shared storage between DinD and app
+      - pyexec-data:/tmp/sessions
+      # Docker storage
+      - docker-storage:/var/lib/docker
+    networks:
+      - pyexec-net
+
+  # PyExec application
+  app:
+    image: ghcr.io/kacperkwapisz/pyexec/pyexec:latest
+    container_name: pyexec-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Connect to DinD daemon
+      - DOCKER_HOST=tcp://dind:2375
+
+      # Required: Set your API key
+      - API_KEY=${API_KEY}
+
+      # Session configuration
+      - BASE_SESSION_PATH=/tmp/sessions
+      - BASE_IMAGE_NAME=ghcr.io/kacperkwapisz/pyexec/pyexec-base:latest
+
+      # Optional: Redis configuration
+      # - REDIS_URL=redis://redis:6379/0
+
+      # Optional: S3 configuration
+      # - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      # - AWS_REGION=${AWS_REGION:-us-east-1}
+
+    volumes:
+      # Shared session storage
+      - pyexec-data:/tmp/sessions
+
+    depends_on:
+      - dind
+
+    networks:
+      - pyexec-net
+
+    # Health check
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8000/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Redis for distributed task management
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: pyexec-redis
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - pyexec-net
+
+volumes:
+  pyexec-data:
+    driver: local
+  docker-storage:
+    driver: local
+  # redis-data:
+  #   driver: local
+
+networks:
+  pyexec-net:
+    driver: bridge

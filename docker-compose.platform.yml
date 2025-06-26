@@ -1,0 +1,76 @@
+# Docker Compose for Dokploy/Coolify Deployment
+#
+# IMPORTANT: This application requires Docker socket access to function.
+# Some platforms may restrict this for security reasons.
+#
+# Prerequisites:
+# 1. The platform must allow Docker socket mounting
+# 2. You must set the API_KEY environment variable
+# 3. Ensure the pyexec-base image is accessible
+
+version: "3.8"
+
+services:
+  app:
+    # Use pre-built image from GitHub Container Registry
+    image: ghcr.io/kacperkwapisz/pyexec/pyexec:latest
+    container_name: pyexec
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      # CRITICAL: Docker socket access is required
+      # If your platform doesn't allow this, see alternatives below
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      # Persistent storage for sessions
+      # Most platforms will provide a persistent volume here
+      - pyexec-data:/tmp/sessions
+
+    environment:
+      # REQUIRED: Set this in your platform's environment variables
+      - API_KEY=${API_KEY}
+
+      # Session storage path inside container
+      - BASE_SESSION_PATH=/tmp/sessions
+
+      # The base image for code execution
+      - BASE_IMAGE_NAME=ghcr.io/kacperkwapisz/pyexec/pyexec-base:latest
+
+      # Optional: Redis for distributed state (if available)
+      # - REDIS_URL=redis://redis:6379/0
+
+      # Optional: S3 for distributed file storage
+      # - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      # - AWS_REGION=${AWS_REGION}
+
+    # Health check for platform monitoring
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add Redis if your platform supports multiple services
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: pyexec-redis
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redis-data:/data
+
+volumes:
+  pyexec-data:
+    driver: local
+  # redis-data:
+  #   driver: local
+
+# Networks are usually managed by the platform
+networks:
+  default:
+    driver: bridge
