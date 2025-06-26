@@ -41,8 +41,6 @@ PyExec requires **Docker socket access** to create disposable containers for cod
 If the platform doesn't allow Docker socket mounting, you can use Docker-in-Docker:
 
 ```yaml
-version: "3.8"
-
 services:
   # Docker-in-Docker service
   dind:
