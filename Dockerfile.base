@@ -1,0 +1,26 @@
+FROM python:3.13-slim as builder
+
+WORKDIR /usr/src/app
+
+# Install base packages
+COPY src/pyexec/base-requirements.txt .
+RUN pip install --no-cache-dir --user -r base-requirements.txt
+
+# --- Final Image ---
+FROM python:3.13-slim
+
+# Create a non-root user
+RUN useradd --create-home appuser
+WORKDIR /home/appuser/app
+
+# Copy installed packages from builder
+COPY --from=builder /root/.local /home/appuser/.local
+
+# Set ownership and permissions
+RUN chown -R appuser:appuser /home/appuser
+USER appuser
+
+# Add the venv packages to the PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
+
+CMD ["python"] 

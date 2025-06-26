@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pyexec-app
+    container_name: pyexec-app
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/tmp/sessions
+    environment:
+      - API_KEY=${API_KEY:-your-secret-key-goes-here}
+      - BASE_SESSION_PATH=/tmp/sessions
+      - BASE_IMAGE_NAME=pyexec-base
+    depends_on:
+      pyexec-base:
+        condition: service_started
+
+  pyexec-base:
+    build:
+      context: .
+      dockerfile: Dockerfile.base
+    image: pyexec-base
+    container_name: pyexec-base-builder
+
+networks: {}

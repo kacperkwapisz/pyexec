@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyexec"
+version = "0.1.0"
+description = "Python Code Execution API"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE.txt"}
+authors = [
+    {name = "Kacper"}
+]
+
+[project.urls]
+"Homepage" = "https://github.com/yourusername/pyexec"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["pyexec"] 
