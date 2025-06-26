@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: pyexec-app
-    container_name: pyexec-app
+    image: pyexec
+    container_name: pyexec
     restart: always
     ports:
       - "8000:8000"
@@ -26,6 +26,6 @@ services:
       context: .
       dockerfile: Dockerfile.base
     image: pyexec-base
-    container_name: pyexec-base-builder
+    container_name: pyexec-base
 
 networks: {}
